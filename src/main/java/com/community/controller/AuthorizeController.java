@@ -1,5 +1,7 @@
 package com.community.controller;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -14,18 +16,19 @@ import com.community.provider.GithubProvider;
 public class AuthorizeController {
 	@Autowired
 	private GithubProvider githubProvider;
-	
+
 	@Value("${github.client.id}")
 	private String clientId;
-	
+
 	@Value("${github.client.secret}")
 	private String clientSecret;
-	
+
 	@Value("${github.Rrdirect_uri}")
 	private String redirectUri;
 
 	@GetMapping("/callback")
-	public String callBack(@RequestParam("code") String code, @RequestParam("state") String state) {
+	public String callBack(@RequestParam("code") String code, @RequestParam("state") String state,
+			HttpServletRequest request) {
 		AccessTokenDto accessTokenDto = new AccessTokenDto();
 		accessTokenDto.setClient_id(clientId);
 		accessTokenDto.setClient_secret(clientSecret);
@@ -34,7 +37,10 @@ public class AuthorizeController {
 		accessTokenDto.setState(state);
 		String accessToken = githubProvider.getAccessToken(accessTokenDto);
 		GithubUser githubUser = githubProvider.getGithubUser(accessToken);
-		System.out.println(githubUser);
-		return "index";
+		if (githubUser != null) {
+			request.getSession().setAttribute("user", githubUser);
+			return "redirect:/";
+		}
+		return "redirect:/";
 	}
 }
